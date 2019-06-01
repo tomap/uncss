@@ -11,7 +11,7 @@ class HtmlrootResourceLoader extends ResourceLoader {
     constructor(htmlroot, strictSSL, userAgent) {
         super({
             strictSSL,
-            userAgent
+            userAgent,
         });
 
         this.htmlroot = htmlroot;
@@ -26,7 +26,7 @@ class HtmlrootResourceLoader extends ResourceLoader {
 
         let url = originalUrl;
         if (src.indexOf('/') === 0) {
-            url = 'file://' + path.join(this.htmlroot, src);
+            url = `file://${path.join(this.htmlroot, src)}`;
         }
 
         return super.fetch(url);
@@ -37,11 +37,11 @@ function defaultOptions() {
     return {
         features: {
             FetchExternalResources: ['script'],
-            ProcessExternalResources: ['script']
+            ProcessExternalResources: ['script'],
         },
         runScripts: 'dangerously',
         userAgent: 'uncss',
-        virtualConsole: new VirtualConsole().sendTo(new Console(process.stderr))
+        virtualConsole: new VirtualConsole().sendTo(new Console(process.stderr)),
     };
 }
 
@@ -71,19 +71,21 @@ function fromSource(src, options) {
             pagePromise = JSDOM.fromFile(src, config);
         }
 
-        return pagePromise.then((page) => {
-            if (options.inject) {
-                if (typeof options.inject === 'function') {
-                    options.inject(page.window);
-                } else {
-                    require(path.join(__dirname, options.inject))(page.window);
+        return pagePromise
+            .then(page => {
+                if (options.inject) {
+                    if (typeof options.inject === 'function') {
+                        options.inject(page.window);
+                    } else {
+                        require(path.join(__dirname, options.inject))(page.window);
+                    }
                 }
-            }
 
-            setTimeout(() => resolve(page), options.timeout);
-        }).catch((e) => {
-            reject(e);
-        });
+                setTimeout(() => resolve(page), options.timeout);
+            })
+            .catch(e => {
+                reject(e);
+            });
     });
 }
 
@@ -102,12 +104,12 @@ function getStylesheets(window, options) {
     const elements = window.document.querySelectorAll('link[rel="stylesheet"]');
 
     return Array.prototype.map
-        .call(elements, (link) => ({
+        .call(elements, link => ({
             href: link.getAttribute('href'),
-            media: link.getAttribute('media') || ''
+            media: link.getAttribute('media') || '',
         }))
-        .filter((sheet) => media.indexOf(sheet.media) !== -1)
-        .map((sheet) => sheet.href);
+        .filter(sheet => media.indexOf(sheet.media) !== -1)
+        .map(sheet => sheet.href);
 }
 
 /**
@@ -121,17 +123,17 @@ function findAll(window, sels) {
 
     // Unwrap noscript elements.
     const elements = document.getElementsByTagName('noscript');
-    Array.prototype.forEach.call(elements, (ns) => {
+    Array.prototype.forEach.call(elements, ns => {
         const wrapper = document.createElement('div');
         wrapper.innerHTML = ns.textContent;
         // Insert each child of the <noscript> as its sibling
-        Array.prototype.forEach.call(wrapper.children, (child) => {
+        Array.prototype.forEach.call(wrapper.children, child => {
             ns.parentNode.insertBefore(child, ns);
         });
     });
 
     // Do the filtering.
-    return sels.filter((selector) => {
+    return sels.filter(selector => {
         try {
             return document.querySelector(selector);
         } catch (e) {
@@ -144,5 +146,5 @@ module.exports = {
     defaultOptions,
     fromSource,
     findAll,
-    getStylesheets
+    getStylesheets,
 };
