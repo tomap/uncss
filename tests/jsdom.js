@@ -5,141 +5,111 @@ const expect = require('chai').expect,
     uncss = require('./../src/uncss.js');
 
 describe('jsdom', () => {
-    it('Should process CSS', done => {
-        uncss(['tests/jsdom/basic.html'], (err, output) => {
-            expect(err).to.equal(null);
-            expect(output).to.include('.evaluated');
-            done();
-        });
+    it('Should process CSS', async () => {
+        const { css } = await uncss(['tests/jsdom/basic.html']);
+
+        expect(css).to.include('.evaluated');
     });
 
-    it('Should exit only when JS evaluation has finished', function(done) {
+    it('Should exit only when JS evaluation has finished', async function() {
         this.timeout(100000);
-        uncss(['tests/jsdom/long_wait.html'], (err, output) => {
-            expect(err).to.equal(null);
-            expect(output).to.include('.long-wait');
-            done();
+        const { css } = await uncss(['tests/jsdom/long_wait.html']);
+
+        expect(css).to.include('.long-wait');
+    });
+
+    it('Should not wait for timeouts by default', async () => {
+        const { css } = await uncss(['tests/jsdom/timeout.html']);
+
+        expect(css).to.not.include('.timeout');
+    });
+
+    it('Should respect options.timeout', async () => {
+        const { css } = await uncss(['tests/jsdom/timeout.html'], {
+            timeout: 5000,
         });
+
+        expect(css).to.include('.timeout');
     });
 
-    it('Should not wait for timeouts by default', done => {
-        uncss(['tests/jsdom/timeout.html'], (err, output) => {
-            expect(err).to.equal(null);
-            expect(output).to.not.include('.timeout');
-            done();
-        });
-    });
-
-    it('Should respect options.timeout', done => {
-        uncss(
-            ['tests/jsdom/timeout.html'],
-            {
-                timeout: 5000,
-            },
-            (err, output) => {
-                expect(err).to.equal(null);
-                expect(output).to.include('.timeout');
-                done();
-            }
-        );
-    });
-
-    it('Should use htmlroot to load root-relative scripts', done => {
+    it('Should use htmlroot to load root-relative scripts', async () => {
         const options = { htmlroot: path.join(__dirname, './jsdom') };
-        uncss(['tests/jsdom/root_relative_script.html'], options, (err, output) => {
-            expect(err).to.equal(null);
-            expect(output).to.include('.evaluated');
-            done();
-        });
+        const { css } = await uncss(['tests/jsdom/root_relative_script.html'], options);
+
+        expect(css).to.include('.evaluated');
     });
 
-    it('Should use htmlroot to load root-relative scripts the same way if htmlroot ends with a slash', done => {
+    it('Should use htmlroot to load root-relative scripts the same way if htmlroot ends with a slash', async () => {
         const options = { htmlroot: path.join(__dirname, './jsdom/') };
-        uncss(['tests/jsdom/root_relative_script.html'], options, (err, output) => {
-            expect(err).to.equal(null);
-            expect(output).to.include('.evaluated');
-            done();
-        });
+        const { css } = await uncss(['tests/jsdom/root_relative_script.html'], options);
+
+        expect(css).to.include('.evaluated');
     });
 
-    it('Should not use htmlroot when loading non-root-relative scripts', done => {
+    it('Should not use htmlroot when loading non-root-relative scripts', async () => {
         const options = { htmlroot: path.join(__dirname, './jsdom') };
-        uncss(['tests/jsdom/non_root_relative_script.html'], options, (err, output) => {
-            expect(err).to.equal(null);
-            expect(output).to.include('.evaluated');
-            done();
-        });
+        const { css } = await uncss(['tests/jsdom/non_root_relative_script.html'], options);
+
+        expect(css).to.include('.evaluated');
     });
 
-    it('Should not use htmlroot when loading non-root-relative scripts in a subfolder', done => {
+    it('Should not use htmlroot when loading non-root-relative scripts in a subfolder', async () => {
         const options = { htmlroot: path.join(__dirname, './jsdom') };
-        uncss(['tests/jsdom/sub/non_root_relative_script.html'], options, (err, output) => {
-            expect(err).to.equal(null);
-            expect(output).to.include('.evaluated');
-            done();
-        });
+        const { css } = await uncss(['tests/jsdom/sub/non_root_relative_script.html'], options);
+
+        expect(css).to.include('.evaluated');
     });
 
-    it('Should set the useragent to the value given in options', done => {
+    it('Should set the useragent to the value given in options', async () => {
         const testUserAgent = 'foo';
         const options = {
             htmlroot: path.join(__dirname, './jsdom'),
             userAgent: testUserAgent,
         };
-        uncss(['tests/jsdom/useragent.html'], options, (err, output) => {
-            expect(err).to.equal(null);
-            expect(output).to.include('useragentset');
-            expect(output).to.not.include('useragentunset');
-            expect(output).to.not.include('error');
-            done();
-        });
+        const { css } = await uncss(['tests/jsdom/useragent.html'], options);
+
+        expect(css).to.include('useragentset');
+        expect(css).to.not.include('useragentunset');
+        expect(css).to.not.include('error');
     });
-    it('Should default the useragent to uncss', done => {
+    it('Should default the useragent to uncss', async () => {
         const options = {
             htmlroot: path.join(__dirname, './jsdom'),
         };
-        uncss(['tests/jsdom/useragent.html'], options, (err, output) => {
-            expect(err).to.equal(null);
-            expect(output).to.include('useragentunset');
-            expect(output).to.not.include('useragentset');
-            expect(output).to.not.include('error');
-            done();
-        });
+        const { css } = await uncss(['tests/jsdom/useragent.html'], options);
+
+        expect(css).to.include('useragentunset');
+        expect(css).to.not.include('useragentset');
+        expect(css).to.not.include('error');
     });
 
-    it('Should execute passed in javascript function before uncss runs', done => {
+    it('Should execute passed in javascript function before uncss runs', async () => {
         const options = {
             htmlroot: path.join(__dirname, './jsdom'),
             inject: window => {
                 window.document.querySelector('html').classList.add('no-test', 'test');
             },
         };
-        uncss(['tests/jsdom/inject.html'], options, (err, output) => {
-            expect(err).to.equal(null);
-            expect(output).to.include('.no-test .inject');
-            expect(output).to.include('.test .inject');
+        const { css } = await uncss(['tests/jsdom/inject.html'], options);
 
-            done();
-        });
+        expect(css).to.include('.no-test .inject');
+        expect(css).to.include('.test .inject');
     });
 
-    it('Should load then execute passed in javascript function before uncss runs', done => {
+    it('Should load then execute passed in javascript function before uncss runs', async () => {
         const options = {
             htmlroot: path.join(__dirname, './jsdom'),
             inject: '../tests/jsdom/inject.js',
         };
-        uncss(['tests/jsdom/inject.html'], options, (err, output) => {
-            expect(err).to.equal(null);
-            expect(output).to.include('.no-test .inject');
-            expect(output).to.include('.test .inject');
+        const { css } = await uncss(['tests/jsdom/inject.html'], options);
 
-            done();
-        });
+        expect(css).to.include('.no-test .inject');
+        expect(css).to.include('.test .inject');
     });
 
     // The use-case here is when using the cli to redirect output to a file:
     //   uncss tests/jsdom/console.html > output.css
-    it('Should redirect console statements to stderr', done => {
+    it('Should redirect console statements to stderr', async () => {
         // Overwrite stdout and stderr so we can monitor the output
         const oldout = process.stdout.write,
             olderr = process.stderr.write;
@@ -152,55 +122,32 @@ describe('jsdom', () => {
             stderr += content;
         };
 
-        uncss(['tests/jsdom/console.html'], (err, output) => {
-            process.stdout.write = oldout;
-            process.stderr.write = olderr;
+        const { css } = await uncss(['tests/jsdom/console.html']);
+        process.stdout.write = oldout;
+        process.stderr.write = olderr;
 
-            expect(err).to.equal(null);
-            expect(output).to.include('.evaluated');
+        expect(css).to.include('.evaluated');
 
-            expect(stdout).to.not.include('log');
-            expect(stderr).to.include('log');
-
-            done();
-        });
+        expect(stdout).to.not.include('log');
+        expect(stderr).to.include('log');
     });
 
-    it('Should have missing globals by default', done => {
-        uncss(['tests/jsdom/globals.html'], (err, output) => {
-            try {
-                expect(err).to.equal(null);
-                expect(output).to.include('.globals-undefined');
-
-                done();
-            } catch (e) {
-                done(e);
-            }
-        });
+    it('Should have missing globals by default', async () => {
+        const { css } = await uncss(['tests/jsdom/globals.html']);
+        expect(css).to.include('.globals-undefined');
     });
 
-    it('Should support injected globals', done => {
-        uncss(
-            ['tests/jsdom/globals.html'],
-            {
-                jsdom: {
-                    beforeParse(window) {
-                        window.matchMedia = () => {
-                            /* noop */
-                        };
-                    },
+    it('Should support injected globals', async () => {
+        const { css } = await uncss(['tests/jsdom/globals.html'], {
+            jsdom: {
+                beforeParse(window) {
+                    window.matchMedia = () => {
+                        /* noop */
+                    };
                 },
             },
-            (err, output) => {
-                try {
-                    expect(err).to.equal(null);
-                    expect(output).to.include('.globals-function');
+        });
 
-                    done();
-                } catch (e) {
-                    done(e);
-                }
-            }
-        );
+        expect(css).to.include('.globals-function');
     });
 });
